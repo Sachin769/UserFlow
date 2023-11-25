@@ -311,7 +311,6 @@ module.exports.insertUserLocationAddress = async (req, resp) => {
         resp.status(422).json(dataSet);
     }
 }
-
 module.exports.fetchUserProfile = async (req, resp) => {
     try {
         const fetchUserProfile = await businessModel.fetchUserProfileViaIds();
@@ -325,11 +324,15 @@ module.exports.fetchUserProfile = async (req, resp) => {
             fetchUserProfile.email = null;
         }
         const fetchNumberOfAddressFilled = await businessModel.fetchUserTotalAddress();
-        console.log("fetchNumebrOFAddresFileed",fetchNumberOfAddressFilled);
         if(fetchNumberOfAddressFilled.code === 500){
             return resp.status(500).json(fetchNumberOfAddressFilled);
         }
         fetchUserProfile.total_address = fetchNumberOfAddressFilled;
+        const fetchTotalUserCars = await businessModel.fetchTotalUserCars();
+        if(fetchTotalUserCars.code === 500){
+            return resp.status(500).json(fetchTotalUserCars);
+        }
+        fetchUserProfile.total_user_cars = fetchTotalUserCars;
         dataSet = response(200, "User Profile", fetchUserProfile);
         resp.status(200).json(dataSet);
     } catch (e) {

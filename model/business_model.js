@@ -596,6 +596,21 @@ module.exports.fetchUserTotalAddress = async (req,resp) => {
     }
 }
 
+module.exports.fetchTotalUserCars = async (req,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            user_id : loginDetails.login_id,
+            status : dbStatus.active,
+            is_active: true
+        }
+        const fetchQuery = await dbSchema.UserCarDetails.countDocuments(filter).lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
 module.exports.fetchUserAllCarDetails = async (req, resp) => {
     try {
         const loginDetails = httpContext.get("loginDetails");
