@@ -320,6 +320,9 @@ module.exports.fetchUserProfile = async (req, resp) => {
         if(fetchUserProfile?.profile_pic){
             fetchUserProfile.profile_pic = process.env.IMAGE_BASE_URL + "/" + fetchUserProfile.profile_pic;
         }
+        if(!(fetchUserProfile?.profile_pic)){
+            fetchUserProfile.profile_pic = null
+        }
         if(!(fetchUserProfile?.email)){
             fetchUserProfile.email = null;
         }
