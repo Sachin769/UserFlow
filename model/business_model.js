@@ -574,10 +574,25 @@ module.exports.fetchUserProfileViaIds = async (userProfileId, resp) => {
         const filter = {
             _id: loginDetails.login_id
         }
-        const fetchQueryViaId = await dbSchema.UserRegisteration.findById(filter).lean();
+        const fetchQueryViaId = await dbSchema.UserRegisteration.findById(filter).select("_id first_name last_name country_code mobile_no mobile_otp is_mobile_verified status is_active added_date modified_date __v access_token email profile_pic").lean();
         return fetchQueryViaId;
     } catch (e) {
         return response(500, "Error In Modal", e.message);
+    }
+}
+
+module.exports.fetchUserTotalAddress = async (req,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            user_id : loginDetails.login_id,
+            status : dbStatus.active,
+            is_active: true
+        }
+        const fetchQuery = await dbSchema.UserLocation.countDocuments(filter).lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
     }
 }
 

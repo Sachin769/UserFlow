@@ -318,7 +318,18 @@ module.exports.fetchUserProfile = async (req, resp) => {
         if (fetchUserProfile.code === 500) {
             return resp.status(500).json(fetchUserProfile);
         }
-        fetchUserProfile.profile_pic = process.env.IMAGE_BASE_URL + "/" + fetchUserProfile.profile_pic;
+        if(fetchUserProfile?.profile_pic){
+            fetchUserProfile.profile_pic = process.env.IMAGE_BASE_URL + "/" + fetchUserProfile.profile_pic;
+        }
+        if(!(fetchUserProfile?.email)){
+            fetchUserProfile.email = null;
+        }
+        const fetchNumberOfAddressFilled = await businessModel.fetchUserTotalAddress();
+        console.log("fetchNumebrOFAddresFileed",fetchNumberOfAddressFilled);
+        if(fetchNumberOfAddressFilled.code === 500){
+            return resp.status(500).json(fetchNumberOfAddressFilled);
+        }
+        fetchUserProfile.total_address = fetchNumberOfAddressFilled;
         dataSet = response(200, "User Profile", fetchUserProfile);
         resp.status(200).json(dataSet);
     } catch (e) {
