@@ -1813,3 +1813,55 @@ module.exports.testingFetchGeoLocationNearBy = async (req, resp) => {
     }
 }
 
+
+
+
+
+module.exports.fetchAllUserForCRM = async (req,resp) => {
+    try{
+        const filter = {
+            is_active : true
+        }
+        const fetchQuery = await dbSchema.UserRegisteration.find(filter).lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.fetchAllCleanerForCRM = async (req,resp) => {
+    try{
+        const filter = {
+            is_active : true
+        };
+        const fetchQuery = await dbSchema.CleanerProfile.find(filter).lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+
+module.exports.fetchUserDetailsForCRM = async (req,resp) => {
+    try{
+        const filter = {
+            _id : req.user_id,
+        }
+        const fetchQuery = await dbSchema.UserRegisteration.findById(filter).lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.fetchCleanerDetailsForCRM = async (req,resp) => {
+    try{
+        const filter = {
+            _id : req.cleaner_id
+        }
+        const fetchQuery = await dbSchema.CleanerProfile.findById(filter).lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
