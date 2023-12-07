@@ -1643,7 +1643,7 @@ module.exports.fetchServiceBasedDiscountInfo = async (req, resp) => {
     try {
         const filter = {
             service_id: req.service_id,
-            // start_date : {$gte : new Date(req.start_date)},
+            start_date : {$lte : new Date(req.start_date)},
             expiry_date: { $gte: new Date(req.start_date) },
             status: dbStatus.active,
             is_active: true
