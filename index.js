@@ -46,7 +46,7 @@ app.get("/api/fetch-district-list",businessAuth.fetchDistrictList);
 
 //here this is used when we want to confirm backend server is running or not via browser.
 app.get("/", (req, resp) => {
-    resp.status(200).send("Welcome to Car Washing Backend APIs");
+    resp.status(200).send({code : 200,message:"Welcome to Car Washing Backend Apis"});
 });
 
 
