@@ -422,8 +422,8 @@ module.exports.sendCleanerLoginOTP = async (req, resp) => {
             return resp.status(500).json(fetchCleanerProfile);
         }
         if (fetchCleanerProfile.length <= 0) {
-            dataSet = response(422, "Invalid Mobile No");
-            return resp.status(422).json(dataSet);
+            dataSet = response(201, "Invalid Mobile No");
+            return resp.status(201).json(dataSet);
         }
         // const timestamp = Date.now(); // Current timestamp in milliseconds
         // const random = Math.floor(Math.random() * 10000); // Random number between 0 and 9999
@@ -453,12 +453,12 @@ module.exports.verifyCleanerOTP = async (req, resp) => {
             return resp.status(500).json(fetchCleanerProfile);
         }
         if (fetchCleanerProfile.length <= 0) {
-            dataSet = response(422, "Invalid Mobile No", req.body.mobile_no);
-            resp.status(422).json(dataSet);
+            dataSet = response(201, "Invalid Mobile No", req.body.mobile_no);
+            resp.status(201).json(dataSet);
         }
         if (req.body.mobile_otp !== fetchCleanerProfile[0].mobile_otp) {
-            dataSet = response(422, "Invalid OTP", req.body.mobile_otp);
-            resp.status(422).json(dataSet);
+            dataSet = response(201, "Invalid OTP", req.body.mobile_otp);
+            resp.status(201).json(dataSet);
             return;
         }
         if (req.body.mobile_otp === fetchCleanerProfile[0].mobile_otp) {
@@ -494,8 +494,8 @@ module.exports.updateProfileCleaner = async (req, resp) => {
                 const storeFilePath = path.join(constantFilePath, imageFilePath);
                 await inputFile.mv(storeFilePath);
             }else{
-                dataSet = response(422,"Please Upload Either PNG or JPG Image");
-                return resp.status(422).json(dataSet);
+                dataSet = response(201,"Please Upload Either PNG or JPG Image");
+                return resp.status(201).json(dataSet);
             }
 
         //     const inputFile1 = req.files.cleaner_aadhar_doc;
@@ -510,8 +510,8 @@ module.exports.updateProfileCleaner = async (req, resp) => {
             // const storeFilePath2 = path.join(constantFilePath, imageFilePath2);
             // await inputFile2.mv(storeFilePath2);
         }else{
-            dataSet = response(422,"Invalid Profile Image");
-            return resp.status(422).json(dataSet);
+            dataSet = response(201,"Invalid Profile Image");
+            return resp.status(201).json(dataSet);
         }
         const updateProfile = await businessModel.updateProfileCleanerViaId(req.body, imageFilePath);
         if (updateProfile.code === 500) {
