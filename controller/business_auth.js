@@ -594,15 +594,15 @@ const validateCleanerLogin = joi.object({
 })
 
 const validateCleanerProfile = joi.object({
-    first_name: joi.string().required(),
-    last_name: joi.string().required(),
+    // first_name: joi.string().required(),
+    // last_name: joi.string().required(),
     // mobile_no: joi.string().length(10).required(),
     email: joi.string().required(),
     full_address: joi.string().required(),
-    state_id: joi.string().required(),
-    state_name: joi.string().required(),
-    district_id: joi.string().required(),
-    district_name: joi.string().required(),
+    // state_id: joi.string().required(),
+    // state_name: joi.string().required(),
+    // district_id: joi.string().required(),
+    // district_name: joi.string().required(),
     pincode: joi.string().required()
     // aadhar_number: joi.string().required(),
     // pan_number: joi.string().required()

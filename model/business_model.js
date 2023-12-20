@@ -1320,15 +1320,15 @@ module.exports.updateProfileCleanerViaId = async (req, imageFilePath, resp) => {
             _id: loginDetails.login_id
         }
         const update = {
-            first_name: req.first_name,
-            last_name: req.last_name,
+            // first_name: req.first_name,
+            // last_name: req.last_name,
             email: req.email,
             profile_pic: imageFilePath,
             address: req.address,
-            state_id: req.state_id,
-            state_name: req.state_name,
-            district_id: req.district_id,
-            district_name: req.district_name,
+            // state_id: req.state_id,
+            // state_name: req.state_name,
+            // district_id: req.district_id,
+            // district_name: req.district_name,
             pincode: req.pincode,
             // aadhar_card_doc_path: aadharCardDoc,
             // pan_card_doc_path: panCardDoc,
