@@ -480,6 +480,7 @@ module.exports.verifyCleanerOTP = async (req, resp) => {
 module.exports.updateProfileCleaner = async (req, resp) => {
     try {
         console.log("req.body",req.body);
+        console.log("req.body.stringify",JSON.stringify(req.body));
         const validatedCleanerProfile = await validateCleanerProfile.validateAsync(req.body);
         const loginDetails = httpContext.get("loginDetails");
         let imageFilePath;
