@@ -1315,6 +1315,7 @@ module.exports.updateTokenCleaner = async (cleanerLoginId, accessToken, resp) =>
 
 module.exports.updateProfileCleanerViaId = async (req, imageFilePath, resp) => {
     try {
+        console.log("modal",req);
         const loginDetails = httpContext.get("loginDetails");
         const filter = {
             _id: loginDetails.login_id

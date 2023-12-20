@@ -390,7 +390,6 @@ module.exports.fetchParticularUserCarDetails = async (req, resp) => {
 
 module.exports.createNewCleanerReg = async (req, resp) => {
     try {
-        console.log("reg cleaner name",req.body);
         const validatedNewCleaner = await validateNewCleaner.validateAsync(req.body);
         const checkCleanerAlreadyExist = await businessModel.fetchCleanerProfileExist(req.body);
         if (checkCleanerAlreadyExist.code === 500) {
@@ -480,6 +479,7 @@ module.exports.verifyCleanerOTP = async (req, resp) => {
 
 module.exports.updateProfileCleaner = async (req, resp) => {
     try {
+        console.log("req.body",req.body);
         const validatedCleanerProfile = await validateCleanerProfile.validateAsync(req.body);
         const loginDetails = httpContext.get("loginDetails");
         let imageFilePath;
