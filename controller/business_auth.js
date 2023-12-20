@@ -481,6 +481,7 @@ module.exports.updateProfileCleaner = async (req, resp) => {
     try {
         console.log("req.body",req.body);
         console.log("req.body.stringify",JSON.stringify(req.body));
+        console.log("req.body.parse",JSON.parse(req.body));
         const validatedCleanerProfile = await validateCleanerProfile.validateAsync(req.body);
         const loginDetails = httpContext.get("loginDetails");
         let imageFilePath;
