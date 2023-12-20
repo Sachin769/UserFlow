@@ -390,7 +390,7 @@ module.exports.fetchParticularUserCarDetails = async (req, resp) => {
 
 module.exports.createNewCleanerReg = async (req, resp) => {
     try {
-        console.log("reg cleaner name",req.body);
+        console.log("reg cleaner name",req);
         const validatedNewCleaner = await validateNewCleaner.validateAsync(req.body);
         const checkCleanerAlreadyExist = await businessModel.fetchCleanerProfileExist(req.body);
         if (checkCleanerAlreadyExist.code === 500) {
