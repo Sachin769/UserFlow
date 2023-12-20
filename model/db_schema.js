@@ -10,6 +10,7 @@ const adminLogin = new Schema({
     mobile_no: { type: String, maxlength: 10, required: false },
     password: { type: String, required: false },
     is_email_verified: { type: Boolean, required: true, default: false },
+    profile_pic: { type: String, default: null },
     admin_type: { type: String, required: true },
     added_date: { type: Date, required: true, default: () => new Date() },
     modified_date: { type: Date, required: true, default: () => new Date() },
@@ -20,14 +21,15 @@ const AdminLogin = mongoose.model("cw_admin_login", adminLogin);
 
 const adminCleanerWorkingLocation = new Schema({
     admin_id: { type: mongoose.Types.ObjectId, required: true },
-    cleaner_id: { type: mongoose.Types.ObjectId, required: true },
+    cleaner_id: { type: mongoose.Types.ObjectId, ref: "cw_cleaner_profile", required: true },
     location: {
         type: { type: String, enum: ["Point"], required: true },
         coordinates: { type: [Number], required: true }
     },
+    service_shift_time_id: { type: [mongoose.Types.ObjectId], ref: "cw_admin_service_shift_time_master", required: true },
     country_name: { type: String, required: true },
     state_name: { type: String, required: true },
-    district_name: {type: String, required: true},
+    district_name: { type: String, required: true },
     pin_code: { type: String, required: true },
     full_address: { type: String, required: true },
     completed_jobs: { type: Number, required: true, default: 0 },
@@ -88,9 +90,9 @@ const masterServiceShiftTime = new Schema({
 const MasterServiceShiftTime = mongoose.model("cw_admin_service_shift_time_master", masterServiceShiftTime);
 
 const adminCreatePackages = new Schema({
-    service_id: { type: mongoose.Types.ObjectId, required: true },
-    car_type_id: { type: mongoose.Types.ObjectId, ref: MasterCarTypes, required: true },
-    service_shift_time_id: { type: mongoose.Types.ObjectId, required: true },
+    service_id: { type: mongoose.Types.ObjectId, ref: "cw_admin_service_master", required: true },
+    car_type_id: { type: mongoose.Types.ObjectId, ref: "cw_admin_car_types_master", required: true },
+    service_shift_time_id: { type: mongoose.Types.ObjectId, ref: "cw_admin_service_shift_time_master", required: true },
     package_period: { type: String, enum: [packagePeriodKey.daily, packagePeriodKey.weekly, packagePeriodKey.monthly, packagePeriodKey.yearly], required: true },
     package_period_duration: { type: Number, required: true },
     price: { type: Number, required: true },
@@ -122,18 +124,33 @@ const userRegisteration = new Schema({
     mobile_no: { type: String, required: true },
     mobile_otp: { type: String, maxlength: 4, required: true },
     is_mobile_verified: { type: Boolean, required: true, default: false },
-    email: { type: String, required: false },
-    profile_pic: { type: String, required: false },
-    full_address: { type: String, required: false },
-    address_nickname : {type: String, required: false},
-    location: {
-        type: { type: String, enum: ["Point"], required: false },
-        coordinates: { type: [Number], required: false }
-    },
-    state_name: { type: String, required: false },
-    country_name: { type: String, required: false },
-    pin_code: { type: String, required: false },
-    access_token: { type: String, required: false },
+    // email: { type: String, required: false },
+    // profile_pic: { type: String, required: false },
+    // full_address: { type: String, required: false },
+    // address_nickname : {type: String, required: false},
+    // location: {
+    //     type: { type: String, enum: ["Point"], required: false },
+    //     coordinates: { type: [Number], required: false }
+    // },
+    // state_name: { type: String, required: false },
+    // country_name: { type: String, required: false },
+    // pin_code: { type: String, required: false },
+    // access_token: { type: String, required: false },
+
+    email: { type: String, required: false, default: null },
+    profile_pic: { type: String, required: false, default: null },
+    location_id: { type: mongoose.Types.ObjectId, required: false, ref: "cw_user_location", default: null },
+    // full_address: { type: String, required: false, default: null },
+    // address_nickname: { type: String, required: false, default: null },
+    // location: {
+    //     type: { type: String, enum: ["Point"], required: false, default: "Point" },
+    //     coordinates: { type: [Number], required: false, default: [] },
+    // },
+    // state_name: { type: String, required: false, default: null },
+    // country_name: { type: String, required: false, default: null },
+    // pin_code: { type: String, required: false, default: null },
+    access_token: { type: String, required: false, default: null },
+
     added_date: { type: Date, required: true, default: () => new Date() },
     modified_date: { type: Date, required: true, default: () => new Date() },
     status: { type: String, required: true, default: dbStatus.pending },
@@ -148,8 +165,8 @@ const UserRegisteration = mongoose.model("cw_user_profile", userRegisteration);
 const userLocation = new Schema({
     user_id: { type: mongoose.Types.ObjectId, required: true },
     full_address: { type: String, required: true },
-    address_nickname : {type: String, required: true},
-    is_default : {type: Boolean, required: true},
+    address_nickname: { type: String, required: true },
+    is_default: { type: Boolean, required: true },
     location: {
         type: { type: String, enum: ["Point"], required: true },
         coordinates: { type: [Number], required: true }
@@ -181,9 +198,9 @@ const userCarDetails = new Schema({
     insurance_company_name: { type: String, required: true },
     puc_expiry_date: { type: Date, required: true },
     puc_company_name: { type: String, required: true },
-    insurance_status: { type: String, required: true },
-    puc_status: { type: String, required: true },
-    car_image: { type: String, required: false },
+    // insurance_status: { type: String, required: true },
+    // puc_status: { type: String, required: true },
+    car_image: { type: String, required: false, default: null },
     added_by: { type: String, required: true },
     modified_by: { type: String, required: true },
     added_date: { type: Date, required: true, default: () => new Date() },
@@ -195,21 +212,21 @@ const UserCarDetails = mongoose.model("cw_user_car_details", userCarDetails);
 
 const userBuyPackage = new Schema({
     user_id: { type: mongoose.Types.ObjectId, required: true },
-    package_id: { type: mongoose.Types.ObjectId, required: true },
-    service_id: { type: mongoose.Types.ObjectId, required: true },
-    car_type_id: { type: mongoose.Types.ObjectId, required: true },
-    service_shift_time_id: { type: mongoose.Types.ObjectId, required: true },
+    package_id: { type: mongoose.Types.ObjectId, ref: "cw_admin_packages_info", required: true },
+    service_id: { type: mongoose.Types.ObjectId, ref: "cw_admin_service_master", required: true },
+    car_type_id: { type: mongoose.Types.ObjectId, ref: "cw_admin_car_types_master", required: true },
+    service_shift_time_id: { type: mongoose.Types.ObjectId, ref: "cw_admin_service_shift_time_master", required: true },
     start_date: { type: Date, required: true },
     expiry_date: { type: Date, required: true },
     start_time: { type: Date, required: true },
     end_time: { type: Date, required: true },
-    user_car_details_id: { type: mongoose.Types.ObjectId, required: true },
+    user_car_details_id: { type: mongoose.Types.ObjectId, ref: "cw_user_car_details", required: true },
     cleaner_id: { type: mongoose.Types.ObjectId, required: true },
-    location: {
-        type: { type: String, enum: ["Point"], required: true },
-        coordinates: { type: [Number], required: true }
-    },
-    user_location_id : {type: mongoose.Types.ObjectId, required: true},
+    // location: {
+    //     type: { type: String, enum: ["Point"], required: true },
+    //     coordinates: { type: [Number], required: true }
+    // },
+    user_location_id: { type: mongoose.Types.ObjectId, required: true },
     price: { type: Number, required: true },
     added_by: { type: mongoose.Types.ObjectId, required: true },
     modified_by: { type: mongoose.Types.ObjectId, required: true },
@@ -221,14 +238,15 @@ const userBuyPackage = new Schema({
 const UserBuyPackage = mongoose.model("cw_user_buy_package", userBuyPackage);
 
 const userBooking = new Schema({
-    user_id: { type: mongoose.Types.ObjectId, required: true },
-    user_buy_package_id : {type: mongoose.Types.ObjectId,required: true},
-    package_id : {type: mongoose.Types.ObjectId, required: true},
-    user_car_details_id: { type: mongoose.Types.ObjectId, required: true },
+    user_id: { type: mongoose.Types.ObjectId, ref: "cw_user_profile", required: true },
+    user_buy_package_id: { type: mongoose.Types.ObjectId, ref: "cw_user_buy_package", required: true },
+    package_id: { type: mongoose.Types.ObjectId, ref: "cw_admin_packages_info", required: true },
+    user_car_details_id: { type: mongoose.Types.ObjectId, ref: "cw_user_car_details", required: true },
+    user_location_id: { type: mongoose.Types.ObjectId, ref: "cw_user_location", required: true },
     service_date: { type: Date, required: true },
     start_time: { type: Date, required: true },
     end_time: { type: Date, required: true },
-    cleaner_id: { type: mongoose.Types.ObjectId, required: true },
+    cleaner_id: { type: mongoose.Types.ObjectId, ref: "cw_cleaner_profile", required: true },
     status: { type: String, required: true, default: dbStatus.upcoming },
     added_by: { type: mongoose.Types.ObjectId, required: true },
     modified_by: { type: mongoose.Types.ObjectId, required: true },
@@ -249,12 +267,12 @@ const cleanerProfile = new Schema({
     email: { type: String, required: false },
     profile_pic: { type: String, required: false },
     full_address: { type: String, required: false },
-    state_id: { type: String, required: false },
-    state_name: { type: String, required: false },
-    district_id: { type: String, required: false },
-    district_name: { type: String, required: false },
-    pincode: { type: String, required: false },
-    access_token: { type: String, required: false },
+    state_id: { type: String, default: null },
+    state_name: { type: String, default: null },
+    district_id: { type: String, default: null },
+    district_name: { type: String, default: null },
+    pincode: { type: String, default: null },
+    access_token: { type: String, default: null },
     added_date: { type: Date, required: true, default: () => new Date() },
     modified_date: { type: Date, required: true, default: () => new Date() },
     status: { type: String, required: true, default: dbStatus.pending },
@@ -265,25 +283,25 @@ cleanerProfile.index({ added_date: -1, id: -1 });
 const CleanerProfile = mongoose.model("cw_cleaner_profile", cleanerProfile);
 
 const cleanerDocuments = new Schema({
-    cleaner_id : {type: mongoose.Types.ObjectId, required: true},
-    aadhar_no: {type: String, required: true},
-    aadhar_doc_file: {type: String, required: true},
-    pan_no : {type: String, required: true},
-    pan_doc_file : {type: String, required: true},
-    added_by: {type: mongoose.Types.ObjectId, required: true},
-    modified_by : {type: mongoose.Types.ObjectId, required: true},
-    added_date : {type: Date, required: true, default: ()=> new Date()},
-    modified_date : {type: Date, required: true, default: ()=> new Date()},
-    status: {type: String, required: true, default: dbStatus.active},
-    is_active : {type: Boolean, required: true, default: true}
+    cleaner_id: { type: mongoose.Types.ObjectId, required: true },
+    aadhar_no: { type: String, required: true },
+    aadhar_doc_file: { type: String, required: true },
+    pan_no: { type: String, required: true },
+    pan_doc_file: { type: String, required: true },
+    added_by: { type: mongoose.Types.ObjectId, required: true },
+    modified_by: { type: mongoose.Types.ObjectId, required: true },
+    added_date: { type: Date, required: true, default: () => new Date() },
+    modified_date: { type: Date, required: true, default: () => new Date() },
+    status: { type: String, required: true, default: dbStatus.active },
+    is_active: { type: Boolean, required: true, default: true }
 })
-const CleanerDocuments = mongoose.model("cw_cleaner_documents",cleanerDocuments);
+const CleanerDocuments = mongoose.model("cw_cleaner_documents", cleanerDocuments);
 
 const cleanerBankDetails = new Schema({
     cleaner_id: { type: mongoose.Types.ObjectId, required: true },
     bank_name: { type: String, required: true },
     acc_holder_name: { type: String, required: true },
-    acc_type: {type: String, required: true},
+    acc_type: { type: String, required: true },
     acc_no: { type: String, required: true },
     ifsc_code: { type: String, required: true },
     added_by: { type: mongoose.Types.ObjectId, required: true },
@@ -296,18 +314,53 @@ const cleanerBankDetails = new Schema({
 const CleanerBankDetails = mongoose.model("cw_cleaner_bank_details", cleanerBankDetails);
 
 const cleanerAttendance = new Schema({
-    cleaner_id : {type: mongoose.Types.ObjectId, required: true},
-    check_in : {type: Date, required: false},
-    check_out: {type: Date, required: false},
+    cleaner_id: { type: mongoose.Types.ObjectId, required: true },
+    check_in: { type: Date, default: null },
+    check_out: { type: Date, default: null },
     // break_time : {type: String, required: true},
-    added_by : {type: mongoose.Types.ObjectId, required: true},
-    modified_by : {type: mongoose.Types.ObjectId, required: true},
-    added_date : {type: Date, required: true, default : ()=> new Date()},
-    modified_date : {type: Date, required: true,default : ()=> new Date()},
-    status : {type: String, required: true, default : dbStatus.active},
-    is_active : {type: Boolean, required: true, default: true}
+    added_by: { type: mongoose.Types.ObjectId, required: true },
+    modified_by: { type: mongoose.Types.ObjectId, required: true },
+    added_date: { type: Date, required: true, default: () => new Date() },
+    modified_date: { type: Date, required: true, default: () => new Date() },
+    status: { type: String, required: true, default: dbStatus.active },
+    is_active: { type: Boolean, required: true, default: true }
 })
-const CleanerAttendance = mongoose.model("cw_cleaner_attendance",cleanerAttendance);
+const CleanerAttendance = mongoose.model("cw_cleaner_attendance", cleanerAttendance);
+
+// const cleanerWorkingHistory = new Schema({
+//     cleaner_id : {type: mongoose.Types.ObjectId,ref:"cw_cleaner_profile", required: true},
+//     booking_id : {type: mongoose.Types.ObjectId,ref: "cw_user_booking", required: true},
+//     start_time : {type: Date, required: true},
+//     start_image : {type:[String], required: false,default: null},
+//     end_image: {type: [String], required:false, default: null},
+//     end_time: {type: Date, required: false,default: null},
+//     added_by: { type: mongoose.Types.ObjectId, required: true },
+//     modified_by: { type: mongoose.Types.ObjectId, required: true },
+//     added_date: { type: Date, required: true, default: () => new Date() },
+//     modified_date: { type: Date, required: true, default: () => new Date() },
+//     status: { type: String, required: true, default: dbStatus.active },
+//     is_active: { type: Boolean, required: true, default: true }
+// })
+// const CleanerWorkingHistory = mongoose.model("cw_cleaner_work_history",cleanerWorkingHistory);
+
+const cleanerWorkingHistory = new Schema({
+    user_id: { type: mongoose.Types.ObjectId, ref: "cw_user_profile", required: true },
+    cleaner_id: { type: mongoose.Types.ObjectId, ref: "cw_cleaner_profile", required: true },
+    booking_id: { type: mongoose.Types.ObjectId, ref: "cw_user_booking", required: true },
+    user_car_details_id: { type: mongoose.Types.ObjectId, ref: "cw_user_car_details", required: true },
+    user_location_id: { type: mongoose.Types.ObjectId, ref: "cw_user_location", required: true },
+    start_time: { type: Date, required: true },
+    starting_image: { type: [String], default: null },
+    end_time: { type: Date, default: null },
+    ending_image: { type: [String], default: null },
+    added_by: { type: mongoose.Types.ObjectId, required: true },
+    modified_by: { type: mongoose.Types.ObjectId, required: true },
+    added_date: { type: Date, required: true, default: () => new Date() },
+    modified_date: { type: Date, required: true, default: () => new Date() },
+    status: { type: String, required: true, default: dbStatus.active },
+    is_active: { type: Boolean, required: true, default: true }
+})
+const CleanerWorkingHistory = mongoose.model("cw_cleaner_work_history", cleanerWorkingHistory);
 
 const adminCountryTable = new Schema({
     country_name: { type: String, required: true },
@@ -351,12 +404,13 @@ const adminDistrictTable = new Schema({
 const AdminDistrictTable = mongoose.model("cw_admin_district", adminDistrictTable);
 
 const adminDiscountDetails = new Schema({
-    service_id: { type: mongoose.Types.ObjectId, required: true },
+    service_id: { type: mongoose.Types.ObjectId, ref: "cw_admin_service_master", required: true },
     start_date: { type: Date, required: true },
     expiry_date: { type: Date, required: true },
     discount_no: { type: String, required: true },
     discount_type: { type: String, enum: ["PERCENTAGE", "FLAT"], required: true },
-    discount_value: { type: String, required: true },
+    discount_value: { type: Number, required: true },
+    discount_name: { type: String, required: true },
     added_by: { type: mongoose.Types.ObjectId, required: true },
     modified_by: { type: mongoose.Types.ObjectId, required: true },
     added_date: { type: Date, required: true, default: () => new Date() },
@@ -370,6 +424,7 @@ const adminGeneralSetting = new Schema({
     admin_id: { type: mongoose.Types.ObjectId, required: true },
     cleaner_subscribed_limits: { type: Number, required: true },
     platform_fees: { type: Number, required: true },
+    platform_fees_type: { type: String, enum: ["PERCENTAGE", "FLAT"], required: true },
     added_by: { type: mongoose.Types.ObjectId, required: true },
     modified_by: { type: mongoose.Types.ObjectId, required: true },
     added_date: { type: Date, required: true, default: () => new Date() },
@@ -428,7 +483,7 @@ const testingGeoLocation = new Schema({
     status: { type: String, required: true, default: "ACTIVE" },
     is_active: { type: Boolean, required: true, default: true }
 })
-const TestingGeoLocation = mongoose.model("cw_testing_geo_location",testingGeoLocation);
+const TestingGeoLocation = mongoose.model("cw_testing_geo_location", testingGeoLocation);
 testingGeoLocation.index({ location: "2dsphere" });
 
 
@@ -442,9 +497,10 @@ module.exports = {
     AdminPackageFeature: AdminPackageFeature,
     UserRegisteration: UserRegisteration,
     CleanerProfile: CleanerProfile,
-    CleanerDocuments : CleanerDocuments,
+    CleanerDocuments: CleanerDocuments,
     CleanerBankDetails: CleanerBankDetails,
-    CleanerAttendance : CleanerAttendance,
+    CleanerAttendance: CleanerAttendance,
+    CleanerWorkingHistory: CleanerWorkingHistory,
     UserLocation: UserLocation,
     UserCarDetails: UserCarDetails,
     UserBuyPackage: UserBuyPackage,
@@ -457,5 +513,5 @@ module.exports = {
     AdminTermAndCondition: AdminTermAndCondition,
     AdminPrivacyPolicy: AdminPrivacyPolicy,
     TestingDateAndTime: TestingDateAndTime,
-    TestingGeoLocation : TestingGeoLocation
+    TestingGeoLocation: TestingGeoLocation
 }

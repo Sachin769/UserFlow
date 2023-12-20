@@ -390,7 +390,7 @@ module.exports.fetchParticularUserCarDetails = async (req, resp) => {
 
 module.exports.createNewCleanerReg = async (req, resp) => {
     try {
-        console.log("reg cleaner name",req);
+        console.log("reg cleaner name",req.body);
         const validatedNewCleaner = await validateNewCleaner.validateAsync(req.body);
         const checkCleanerAlreadyExist = await businessModel.fetchCleanerProfileExist(req.body);
         if (checkCleanerAlreadyExist.code === 500) {
@@ -455,7 +455,6 @@ module.exports.verifyCleanerOTP = async (req, resp) => {
         if (fetchCleanerProfile.length <= 0) {
             dataSet = response(201, "Invalid Mobile No", {mobile_no: req.body.mobile_no});
             return resp.status(201).json(dataSet);
-             
         }
         if (req.body.mobile_otp !== fetchCleanerProfile[0].mobile_otp) {
             dataSet = response(201, "Invalid OTP", {mobile_no: req.body.mobile_no});
@@ -468,7 +467,7 @@ module.exports.verifyCleanerOTP = async (req, resp) => {
             if (updateUserToken.code === 500) {
                 return resp.status(500).json(updateUserToken);
             }
-            dataSet = response(200, "Registered Mobile Number Verified", { token });
+            dataSet = response(200, "Registered Mobile Number Verified", { token,full_name : `${fetchCleanerProfile[0].first_name} ${fetchCleanerProfile[0].last_name}` });
             resp.status(200).json(dataSet);
             return;
         }
