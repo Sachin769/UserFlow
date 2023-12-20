@@ -479,9 +479,15 @@ module.exports.verifyCleanerOTP = async (req, resp) => {
 
 module.exports.updateProfileCleaner = async (req, resp) => {
     try {
-        console.log("req.body",req.body);
-        console.log("req.body.stringify",JSON.stringify(req.body));
-        console.log("req.body.parse",JSON.parse(req.body));
+        console.log("req.body", req.body);
+        for (const key in req.body) {
+            if (req.body.hasOwnProperty(key)) {
+                // Remove double quotes from the value and assign it to the new object
+                req.body[key] = req.body[key].replace(/"/g, '');
+            }
+        }
+        console.log("final",req.body);
+        console.log("done");
         const validatedCleanerProfile = await validateCleanerProfile.validateAsync(req.body);
         const loginDetails = httpContext.get("loginDetails");
         let imageFilePath;
