@@ -397,8 +397,8 @@ module.exports.createNewCleanerReg = async (req, resp) => {
             return resp.status(500).json(checkCleanerAlreadyExist);
         }
         if (checkCleanerAlreadyExist > 0) {
-            dataSet = response(200, "Already Exists With Same Mobile Number");
-            return resp.status(200).json(dataSet);
+            dataSet = response(201, "Already Exists With Same Mobile Number");
+            return resp.status(201).json(dataSet);
         }
         //third party send mobile otp req.body.mobile_otp;
         req.body.mobile_otp = "1234";
