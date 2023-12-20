@@ -453,12 +453,12 @@ module.exports.verifyCleanerOTP = async (req, resp) => {
             return resp.status(500).json(fetchCleanerProfile);
         }
         if (fetchCleanerProfile.length <= 0) {
-            dataSet = response(201, "Invalid Mobile No", {mobile_no: req.body.mobile_no});
+            dataSet = response(201, "Invalid Mobile No", mobile_no: req.body.mobile_no);
             return resp.status(201).json(dataSet);
              
         }
         if (req.body.mobile_otp !== fetchCleanerProfile[0].mobile_otp) {
-            dataSet = response(201, "Invalid OTP", {mobile_no: req.body.mobile_no});
+            dataSet = response(201, "Invalid OTP", mobile_no: req.body.mobile_no);
             resp.status(201).json(dataSet);
             return;
         }
