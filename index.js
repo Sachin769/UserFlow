@@ -10,6 +10,7 @@ require("dotenv").config({path: path.join(__dirname,"environment",".env.developm
 
 const userRoutes = require("./routes/user_routes");
 const businessAuth = require("./controller/business_auth");
+const cleanerRoutes = require("./routes/cleaner_routes");
 const crmRoutes = require("./routes/crm_routes");
 
 
@@ -37,6 +38,7 @@ app.use((req, resp, next) => {
 
 
 app.use("/api/user",userRoutes);
+app.use("/api/cleaner",cleanerRoutes);
 app.use("/api/crm",crmRoutes);
 
 app.get("/api/fetch-country-list",businessAuth.fetchCountryList);

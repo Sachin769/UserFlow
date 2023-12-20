@@ -184,11 +184,11 @@ module.exports.sendUserLoginOTP = async (req, resp) => {
         // //third party send mobile otp here then add in req.body.mobile_otp
         //here third party send OTP to mobile no then add in req.body.mobile_otp
         req.body.mobile_otp = "1234";
-        const updateOTP = await businessModel.updateUserOTP(fetchUserExist[0]._id, req.body);
+        const updateOTP = await businessModel.updateUserOTP(fetchUserExist[0]._id, req.body.mobile_otp);
         if (updateOTP.code === 500) {
             return resp.status(500).json(updateOTP);
         }
-        dataSet = response(200, "OTP is Sent To Your Registered Email");
+        dataSet = response(200, "OTP is Sent To Your Registered Mobile");
         resp.status(200).json(dataSet);
     } catch (e) {
         dataSet = response(422, "Error During User Login", e.message)
@@ -210,8 +210,7 @@ module.exports.verifyUserOTP = async (req, resp) => {
         }
         if (req.body.mobile_otp !== fetchUserProfile[0].mobile_otp) {
             dataSet = response(200, "Invalid OTP", req.body.mobile_otp);
-            resp.status(200).json(dataSet);
-            return;
+            return resp.status(200).json(dataSet);
         }
         if (req.body.mobile_otp === fetchUserProfile[0].mobile_otp) {
             const token = jwt.sign({ login_id: fetchUserProfile[0]._id, mobile_no: fetchUserProfile[0].mobile_no }, process.env.ACCESS_TOKEN_SALT);
@@ -258,12 +257,14 @@ module.exports.updateProfileUser = async (req, resp) => {
 
 module.exports.insertUserLocationAddress = async (req, resp) => {
     try {
+        console.log("process.env",+process.env.USER_LOCATION_WITHIN);
         const validatedUserLocation = await validateuserLocation.validateAsync(req.body);
         //here always one object should come because at starting precure that thing always check 100m within range or not.
         const checkAlreadyAddedLocation = await businessModel.checkAlreadyUserAddedLocation(req.body);
         if (checkAlreadyAddedLocation.code === 500) {
             return resp.status(500).json(checkAlreadyAddedLocation);
         }
+        //here should be always one object came inside the array.So array length is always one.
         if (checkAlreadyAddedLocation.length > 0) {
             dataSet = response(422, "This Location Already Exist Near 50m", checkAlreadyAddedLocation);
             return resp.status(500).json(dataSet);
@@ -284,26 +285,26 @@ module.exports.insertUserLocationAddress = async (req, resp) => {
         if (req.body.is_default === true) {
             //here always default location for particular user always comes only one object.
             const fetchIsAnyDefaultLocation = await businessModel.fetchUserDefaultLocation();
-            if (fetchIsAnyDefaultLocation?.code === 500) {
-                return resp.status(500).json(fetchIsAnyDefaultLocation);
-            }
             if (fetchIsAnyDefaultLocation) {
                 const updateUserLocationDefaultLocation = await businessModel.updateUserDefaultLocation(fetchIsAnyDefaultLocation._id);
                 if (updateUserLocationDefaultLocation.code === 500) {
                     return resp.status(500).json(updateUserLocationDefaultLocation);
                 }
             }
+            if (fetchIsAnyDefaultLocation?.code === 500) {
+                return resp.status(500).json(fetchIsAnyDefaultLocation);
+            }
         }
         const insertUserNewLocation = await businessModel.insertUserNewLocation(req.body);
         if (insertUserNewLocation.code === 500) {
             return resp.status(500).json(insertUserNewLocation);
         }
-        if (req.body.is_default === true) {
-            const updateUserProfile = await businessModel.updateUserProfileAddress(req.body);
-            if (updateUserProfile.code === 500) {
-                return resp.status(500).json(updateUserProfile);
-            }
-        }
+        // if (req.body.is_default === true) {
+        //     const updateUserProfile = await businessModel.updateUserProfileAddress(req.body);
+        //     if (updateUserProfile.code === 500) {
+        //         return resp.status(500).json(updateUserProfile);
+        //     }
+        // }
         dataSet = response(200, "User Location Added Successfully");
         resp.status(200).json(dataSet);
     } catch (e) {
@@ -311,6 +312,7 @@ module.exports.insertUserLocationAddress = async (req, resp) => {
         resp.status(422).json(dataSet);
     }
 }
+
 module.exports.fetchUserProfile = async (req, resp) => {
     try {
         const fetchUserProfile = await businessModel.fetchUserProfileViaIds();
@@ -320,12 +322,12 @@ module.exports.fetchUserProfile = async (req, resp) => {
         if(fetchUserProfile?.profile_pic){
             fetchUserProfile.profile_pic = process.env.IMAGE_BASE_URL + "/" + fetchUserProfile.profile_pic;
         }
-        if(!(fetchUserProfile?.profile_pic)){
-            fetchUserProfile.profile_pic = null
-        }
-        if(!(fetchUserProfile?.email)){
-            fetchUserProfile.email = null;
-        }
+        // if(!(fetchUserProfile?.profile_pic)){
+        //     fetchUserProfile.profile_pic = null
+        // }
+        // if(!(fetchUserProfile?.email)){
+        //     fetchUserProfile.email = null;
+        // }
         const fetchNumberOfAddressFilled = await businessModel.fetchUserTotalAddress();
         if(fetchNumberOfAddressFilled.code === 500){
             return resp.status(500).json(fetchNumberOfAddressFilled);
@@ -368,7 +370,11 @@ module.exports.fetchParticularUserCarDetails = async (req, resp) => {
     try {
         const validatedParticularUserCarDetails = await validateParticularUserCarDetails.validateAsync(req.query);
         const fetchParticularUserCarDetails = await businessModel.fetchParticularUserCarDetails(req.query);
-        if (fetchParticularUserCarDetails.code === 500) {
+        if(!fetchParticularUserCarDetails){
+            dataSet = response(422,"Vehicle Id Not Exist");
+            return resp.status(422).json(dataSet);
+        }
+        if (fetchParticularUserCarDetails?.code === 500) {
             return resp.status(500).json(fetchParticularUserCarDetails);
         }
         if (fetchParticularUserCarDetails?.car_image) {
@@ -384,6 +390,7 @@ module.exports.fetchParticularUserCarDetails = async (req, resp) => {
 
 module.exports.createNewCleanerReg = async (req, resp) => {
     try {
+        console.log("reg cleaner name",req.body);
         const validatedNewCleaner = await validateNewCleaner.validateAsync(req.body);
         const checkCleanerAlreadyExist = await businessModel.fetchCleanerProfileExist(req.body);
         if (checkCleanerAlreadyExist.code === 500) {
@@ -497,11 +504,11 @@ module.exports.updateProfileCleaner = async (req, resp) => {
         //     const storeFilePath1 = path.join(constantFilePath, imageFilePath1);
         //     await inputFile1.mv(storeFilePath1);
 
-        //     const inputFile2 = req.files.cleaner_pan_card_doc;
-        //     const destFileName2 = loginDetails.login_id + ".jpg";
-        //     imageFilePath2 = path.join("cleaner_pan_card_doc", destFileName2)
-        //     const storeFilePath2 = path.join(constantFilePath, imageFilePath2);
-        //     await inputFile2.mv(storeFilePath2);
+            // const inputFile2 = req.files.cleaner_pan_card_doc;
+            // const destFileName2 = loginDetails.login_id + ".jpg";
+            // imageFilePath2 = path.join("cleaner_pan_card_doc", destFileName2)
+            // const storeFilePath2 = path.join(constantFilePath, imageFilePath2);
+            // await inputFile2.mv(storeFilePath2);
         }else{
             dataSet = response(422,"Invalid Profile Image");
             return resp.status(422).json(dataSet);
@@ -520,6 +527,7 @@ module.exports.updateProfileCleaner = async (req, resp) => {
 
 module.exports.insertOrUpdateCleanerDocuements = async (req,resp) => {
     try{
+        const loginDetails = httpContext.get("loginDetails");
         const validatedClenaerDocuments = await validateClenaerDocuments.validateAsync(req.body);
         //here updation query still pending
         let imageFilePathAadhar;
@@ -528,7 +536,7 @@ module.exports.insertOrUpdateCleanerDocuements = async (req,resp) => {
             const fileExtension = path.extname(req.files.aadhar_doc_file.name);
             const inputFile1 = req.files.aadhar_doc_file;
             const destFileName1 = loginDetails.login_id + `${fileExtension}`;
-            imageFilePathAadhar = path.join("cleaner_aadhar_card_doc", destFileName1)
+            imageFilePathAadhar = path.join("cleaner_aadhar_card_doc", destFileName1);
             const storeFilePath1 = path.join(constantFilePath, imageFilePathAadhar);
             await inputFile1.mv(storeFilePath1);
         }

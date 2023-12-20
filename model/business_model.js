@@ -82,7 +82,6 @@ module.exports.fetchAdminUserList = async (req, resp) => {
         const totalPage = Math.ceil(totalCount / itemsPerPage);
         const fetchQuery = await dbSchema.UserRegisteration.find(filter).sort(descendingOrder).skip((currentPage) * itemsPerPage).limit(itemsPerPage).lean();
         const fetchQueryExplain = await dbSchema.UserRegisteration.find(filter).sort(descendingOrder).skip((currentPage) * itemsPerPage).limit(itemsPerPage).lean().explain("executionStats");
-        console.log("explain method", fetchQueryExplain);
 
         return {
             data: fetchQuery,
@@ -118,7 +117,7 @@ module.exports.fetchAdminCleanerList = async (req, resp) => {
 
 module.exports.fetchCleanerNearLocated = async (req, resp) => {
     try {
-        const maxDistance = 500;
+        const maxDistance = +process.env.CLEANER_LOCATION_WITHIN;
         const fetchQuery = await dbSchema.AdminCleanerWorkingLocation.find({ location: { $nearSphere: { $geometry: { type: "Point", coordinates: [req.longitude, req.latitude] }, $maxDistance: maxDistance } } }).lean();
         return fetchQuery;
     } catch (e) {
@@ -188,9 +187,11 @@ module.exports.insertNewCarTypes = async (req, car_type_logo, resp) => {
 
 module.exports.fetchMasterDayShiftViaKeyAndTime = async (req, resp) => {
     try {
+        console.log("req.in modal",req);
+        console.log("forme ",new Date(req.from_time));
         const filter = {
             // key: req.key,
-            // am_or_pm: req.am_or_pm,
+            am_or_pm: req.am_or_pm,
             $or: [
                 { from_time: { $lte: new Date(req.from_time) }, to_time: { $gte: new Date(req.from_time) } },
                 { from_time: { $lte: new Date(req.to_time) }, to_time: { $gte: new Date(req.to_time) } }
@@ -201,7 +202,10 @@ module.exports.fetchMasterDayShiftViaKeyAndTime = async (req, resp) => {
             //     { to_time: { $lte: new Date(req.to_time) } },
             // ],
         }
+        const fetchQuery1 = await dbSchema.MasterServiceShiftTime.find(filter).lean();
+        console.log("fetchQuery1",fetchQuery1);
         const fetchQuery = await dbSchema.MasterServiceShiftTime.countDocuments(filter).lean();
+        console.log("fetchQuery",fetchQuery);
         return fetchQuery;
     } catch (e) {
         return response(500, "Error In Modal", e.message);
@@ -258,7 +262,6 @@ module.exports.createAdminNewPackage = async (req, resp) => {
             modified_by: loginDetails.login_id
         })
         const insertQuery = await insertedObject.save();
-        console.log("insertQueyr", insertQuery);
         return insertQuery;
     } catch (e) {
         return response(500, "Error In Modal", e.message);
@@ -501,6 +504,7 @@ module.exports.insertCleanerNewWorkingLocation = async (req, resp) => {
                 type: req.shape,
                 coordinates: [req.longitude, req.latitude]
             },
+            service_shift_time_id : req.service_shift_time_id,
             country_name: req.countryName,
             state_name: req.stateName,
             district_name: req.districtName,
@@ -547,9 +551,10 @@ module.exports.fetchUserProfileExist = async (req, resp) => {
 module.exports.fetchUserProfile = async (req, resp) => {
     try {
         const filter = {
-            mobile_no: req.mobile_no
+            mobile_no: req.mobile_no,
+            is_active: true
         }
-        const fetchQuery = await dbSchema.UserRegisteration.find(filter);
+        const fetchQuery = await dbSchema.UserRegisteration.find(filter).lean();
         return fetchQuery;
     } catch (e) {
         return response(500, "Error In Modal", e.message);
@@ -581,33 +586,33 @@ module.exports.fetchUserProfileViaIds = async (userProfileId, resp) => {
     }
 }
 
-module.exports.fetchUserTotalAddress = async (req,resp) => {
-    try{
+module.exports.fetchUserTotalAddress = async (req, resp) => {
+    try {
         const loginDetails = httpContext.get("loginDetails");
         const filter = {
-            user_id : loginDetails.login_id,
-            status : dbStatus.active,
+            user_id: loginDetails.login_id,
+            status: dbStatus.active,
             is_active: true
         }
         const fetchQuery = await dbSchema.UserLocation.countDocuments(filter).lean();
         return fetchQuery;
-    }catch(e){
-        return response(500,"Error In Modal",e.message);
+    } catch (e) {
+        return response(500, "Error In Modal", e.message);
     }
 }
 
-module.exports.fetchTotalUserCars = async (req,resp) => {
-    try{
+module.exports.fetchTotalUserCars = async (req, resp) => {
+    try {
         const loginDetails = httpContext.get("loginDetails");
         const filter = {
-            user_id : loginDetails.login_id,
-            status : dbStatus.active,
+            user_id: loginDetails.login_id,
+            status: dbStatus.active,
             is_active: true
         }
         const fetchQuery = await dbSchema.UserCarDetails.countDocuments(filter).lean();
         return fetchQuery;
-    }catch(e){
-        return response(500,"Error In Modal",e.message);
+    } catch (e) {
+        return response(500, "Error In Modal", e.message);
     }
 }
 
@@ -691,7 +696,6 @@ module.exports.fetchCountryList = async (req, resp) => {
 
 module.exports.fetchStateList = async (req, resp) => {
     try {
-        console.log("sfdsfs", req);
         const filter = {
             // country_id : req.country_id,
             // country_id : new mongoose.Types.ObjectId(req.country_id),
@@ -717,13 +721,13 @@ module.exports.fetchDistrictList = async (req, resp) => {
     }
 }
 
-module.exports.updateUserOTP = async (userLoginId, req, resp) => {
+module.exports.updateUserOTP = async (userLoginId, mobileOTP, resp) => {
     try {
         const filter = {
             _id: userLoginId
         }
         const update = {
-            mobile_otp: req.mobile_otp,
+            mobile_otp: mobileOTP,
             modified_date: new Date()
         }
         const options = {
@@ -736,10 +740,10 @@ module.exports.updateUserOTP = async (userLoginId, req, resp) => {
     }
 }
 
-module.exports.updateTokenUser = async (userRegId, accessToken, resp) => {
+module.exports.updateTokenUser = async (userLoginId, accessToken, resp) => {
     try {
         const filter = {
-            _id: userRegId
+            _id: userLoginId
         }
         const update = {
             is_mobile_verified: true,
@@ -766,7 +770,6 @@ module.exports.updateProfileUserViaId = async (req, userProfilePath, resp) => {
         const update = {
             first_name: req.first_name,
             last_name: req.last_name,
-            // mobile_no: req.mobile_no,
             email: req.email,
             profile_pic: userProfilePath,
             modified_by: loginDetails.login_id,
@@ -815,7 +818,7 @@ module.exports.updateUserProfileAddress = async (req, resp) => {
 module.exports.checkAlreadyUserAddedLocation = async (req, resp) => {
     try {
         const loginDetails = httpContext.get("loginDetails");
-        const maxDistance = 50;
+        const maxDistance = +process.env.USER_LOCATION_WITHIN;
         const fetchQuery = await dbSchema.UserLocation.find({ user_id: loginDetails.login_id, location: { $nearSphere: { $geometry: { type: "Point", coordinates: [req.longitude, req.latitude] }, $maxDistance: maxDistance } } });
         return fetchQuery;
     } catch (e) {
@@ -859,7 +862,6 @@ module.exports.fetchUserDefaultLocation = async (req, resp) => {
             is_active: true
         }
         const fetchQuery = await dbSchema.UserLocation.findOne(filter).lean();
-        console.log("fetchQuery", fetchQuery);
         return fetchQuery;
     } catch (e) {
         return response(500, "Error In Modal", e.message);
@@ -884,9 +886,11 @@ module.exports.updateUserDefaultLocation = async (defaultLocationId, resp) => {
     }
 }
 
-module.exports.fetchUserCarViaVehicleId = async (vehicleId, resp) => {
+module.exports.fetchUserCarVehicleIdExist = async (vehicleId, resp) => {
     try {
+        const loginDetails = httpContext.get("loginDetails");
         const filter = {
+            user_id: loginDetails.login_id,
             vehicle_id: vehicleId,
             status: dbStatus.active,
             is_active: true
@@ -961,6 +965,13 @@ module.exports.fetchCarServicePackageInfo = async (req, resp) => {
             is_active: true
         }
         const fetchQuery = await dbSchema.AdminCreatePackages.find(filter).distinct("car_type_id").lean();
+        // const fetchQuery = await dbSchema.AdminCreatePackages.aggregate([
+        //     { $match: filter },
+        //     { $lookup: { from: "cw_admin_car_types_master", localField: "car_type_id", foreignField: "_id", as: "car_type" } },
+        //     { $unwind: "$car_type_id" }, // If car_type_id is an array, unwind it to get individual documents
+        //     { $group: { _id: "$car_type_id", data: { $first: "$$ROOT" } } }, // Group by car_type_id and keep the first document
+        //     { $replaceRoot: { newRoot: "$data" } } // Replace the root with the original document
+        // ]);
         return fetchQuery;
     } catch (e) {
         return response(500, "Error In Modal", e.message);
@@ -1075,10 +1086,23 @@ module.exports.fetchUserAddressOnParticualrLatLong = async (req, resp) => {
     }
 }
 
-module.exports.fetchAllCleanerNearByWorking = async (req, resp) => {
+module.exports.fetchSelectedUserLocationViaId = async (userLocationId,resp) => {
+    try{
+        const filter = {
+            _id : userLocationId
+        }
+        const fetchQuery = await dbSchema.UserLocation.findById(filter).lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.fetchAllCleanerNearByWorking = async (coordinates, resp) => {
     try {
-        const maxDistance = 500;
-        const fetchQuery = await dbSchema.AdminCleanerWorkingLocation.find({ status: dbStatus.active, is_active: true, location: { $nearSphere: { $geometry: { type: "Point", coordinates: [req.longitude, req.latitude] }, $maxDistance: maxDistance } } }).lean();
+        const maxDistance = +process.env.CLEANER_LOCATION_WITHIN;
+        console.log("maxDistance",maxDistance);
+        const fetchQuery = await dbSchema.AdminCleanerWorkingLocation.find({ status: dbStatus.active, is_active: true, location: { $nearSphere: { $geometry: { type: "Point", coordinates: [coordinates[0], coordinates[1]] }, $maxDistance: maxDistance } } }).lean();
         return fetchQuery;
     } catch (e) {
         return response(500, "Error In Modal", e.message);
@@ -1097,9 +1121,8 @@ module.exports.fetchPacakgeDetailsViaId = async (packageId, resp) => {
     }
 }
 
-module.exports.insertNewBuyPackage = async (req, packageDetails, cleanerDetails,userLocationId, resp) => {
+module.exports.insertNewBuyPackage = async (req, packageDetails, cleanerDetails, userLocationId, resp) => {
     try {
-        console.log("userLocationId",userLocationId);
         const loginDetails = httpContext.get("loginDetails");
         const insertedObject = new dbSchema.UserBuyPackage({
             user_id: loginDetails.login_id,
@@ -1114,10 +1137,10 @@ module.exports.insertNewBuyPackage = async (req, packageDetails, cleanerDetails,
             user_car_details_id: req.user_car_details_id,
             cleaner_id: cleanerDetails.cleaner_id,
             user_location_id: userLocationId,
-            location: {
-                type: req.shape,
-                coordinates: [req.longitude, req.latitude]
-            },
+            // location: {
+            //     type: req.shape,
+            //     coordinates: [req.longitude, req.latitude]
+            // },
             price: packageDetails.price,
             added_by: loginDetails.login_id,
             modified_by: loginDetails.login_id
@@ -1129,7 +1152,7 @@ module.exports.insertNewBuyPackage = async (req, packageDetails, cleanerDetails,
     }
 }
 
-module.exports.insertUserNewBooking = async (req, cleanerDetailsId,userBuyPackageId, resp) => {
+module.exports.insertUserNewBooking = async (req, cleanerDetailsId, userBuyPackageId, resp) => {
     try {
         const loginDetails = httpContext.get("loginDetails");
         const insertedObject = new dbSchema.UserBooking({
@@ -1137,6 +1160,7 @@ module.exports.insertUserNewBooking = async (req, cleanerDetailsId,userBuyPackag
             user_buy_package_id: userBuyPackageId,
             package_id: req.package_id,
             user_car_details_id: req.user_car_details_id,
+            user_location_id : req.user_location_id,
             service_date: new Date(req.start_date),
             start_time: new Date(req.start_time),
             end_time: new Date(req.end_time),
@@ -1151,14 +1175,35 @@ module.exports.insertUserNewBooking = async (req, cleanerDetailsId,userBuyPackag
     }
 }
 
+module.exports.updateCleanerSubscribedJobs = async (cleanerId,updateSubscribedJobs,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            cleaner_id : cleanerId
+        }
+        const update = {
+            subscribed_jobs: updateSubscribedJobs,
+            modified_by : loginDetails.login_id,
+            modified_date : new Date()
+        }
+        const options = {
+            new : true
+        }
+        const updateQuery = await dbSchema.AdminCleanerWorkingLocation.findOneAndUpdate(filter,update,options);
+        return updateQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
 module.exports.fetchUserUpcomingBooking = async (req, resp) => {
     try {
         const loginDetails = httpContext.get("loginDetails");
         const filter = {
             user_id: loginDetails.login_id,
-            is_active : true
+            is_active: true
         }
-        const fetchQuery = await dbSchema.UserBooking.find(filter).lean();
+        const fetchQuery = await dbSchema.UserBooking.find(filter).populate("user_car_details_id","car_image").select("-added_by -modified_by -is_active -__v -added_date -modified_date").lean();
         return fetchQuery;
     } catch (e) {
         return response(500, "Error IN Modal", e.message);
@@ -1177,7 +1222,7 @@ module.exports.fetchCleanerProfileExist = async (req, resp) => {
     try {
         const filter = {
             mobile_no: req.mobile_no,
-            is_active : true,
+            is_active: true,
         }
         const fetchQuery = await dbSchema.CleanerProfile.countDocuments(filter).lean();
         return fetchQuery;
@@ -1299,22 +1344,22 @@ module.exports.updateProfileCleanerViaId = async (req, imageFilePath, resp) => {
     }
 }
 
-module.exports.insertCleanerDocuments = async (req,aadharDocFile,panDocFile,resp) => {
-    try{
+module.exports.insertCleanerDocuments = async (req, aadharDocFile, panDocFile, resp) => {
+    try {
         const loginDetails = httpContext.get("loginDetails");
         const insertedObject = new dbSchema.CleanerDocuments({
-            cleaner_id : loginDetails.login_id,
-            aadhar_no : req.aadhar_no,
-            pan_no : req.pan_no,
-            aadhar_doc_file : aadharDocFile,
-            pan_doc_file : panDocFile,
-            added_by : loginDetails.login_id,
+            cleaner_id: loginDetails.login_id,
+            aadhar_no: req.aadhar_no,
+            pan_no: req.pan_no,
+            aadhar_doc_file: aadharDocFile,
+            pan_doc_file: panDocFile,
+            added_by: loginDetails.login_id,
             modified_by: loginDetails.login_id
         })
         const insertQuery = await insertedObject.save();
         return insertQuery;
-    }catch(e){
-        return response(500,"Error In Modal",e.message);
+    } catch (e) {
+        return response(500, "Error In Modal", e.message);
     }
 }
 
@@ -1352,18 +1397,57 @@ module.exports.insertCleanerBankDetails = async (req, resp) => {
     }
 }
 
-module.exports.checkTodayCleanerAttendance = async (req,resp) => {
-    try{
+module.exports.checkTodayCleanerAttendance = async (req, resp) => {
+    try {
         const currentDate = new Date();
-        currentDate.setHours(0,0,0,0);
+        currentDate.setHours(0, 0, 0, 0);
         const loginDetails = httpContext.get("loginDetails");
         const filter = {
-            cleaner_id : loginDetails.login_id,
-            check_in : {$gte: currentDate},
-            check_out: {$exists: false}
+            cleaner_id: loginDetails.login_id,
+            check_in: { $gte: currentDate },
+            check_out: { $exists: false }
         }
         const fetchQuery = await dbSchema.CleanerAttendance.find(filter);
         return fetchQuery;
+    } catch (e) {
+        return response(500, "Error In Modal", e.message);
+    }
+}
+
+
+module.exports.checkCleanerAssignedLocation = async (req,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            cleaner_id : loginDetails.login_id,
+            status : dbStatus.active,
+            is_active: true
+        }
+        const countDocuments = await dbSchema.AdminCleanerWorkingLocation.find(filter).lean();
+        return countDocuments
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.updateCleanerActiveJobs = async (activeJobs,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            cleaner_id : loginDetails.login_id,
+            status : dbStatus.active,
+            is_active: true
+        }
+        const update = {
+            active_jobs : activeJobs,
+            modified_by : loginDetails.login_id,
+            modified_date : new Date()
+        }
+        const options = {
+            new: true
+        }
+        const updateQuery = await dbSchema.AdminCleanerWorkingLocation.findOneAndUpdate(filter,update,options);
+        return updateQuery;
     }catch(e){
         return response(500,"Error In Modal",e.message);
     }
@@ -1373,10 +1457,10 @@ module.exports.insertCleanerAttendance = async (req, resp) => {
     try {
         const loginDetails = httpContext.get("loginDetails");
         const insertedObject = new dbSchema.CleanerAttendance({
-            cleaner_id : loginDetails.login_id,
-            check_in : new Date(req.check_in),
-            added_by : loginDetails.login_id,
-            modified_by : loginDetails.login_id,
+            cleaner_id: loginDetails.login_id,
+            check_in: new Date(req.check_in),
+            added_by: loginDetails.login_id,
+            modified_by: loginDetails.login_id,
         })
         const insertQuery = await insertedObject.save();
         return insertQuery;
@@ -1385,61 +1469,74 @@ module.exports.insertCleanerAttendance = async (req, resp) => {
     }
 }
 
-module.exports.updateTodayCleanerAttendance = async (cleanerAttendanceId,req,resp) => {
+module.exports.fetchCleanerWorkLocationDetails = async (req,resp) => {
     try{
         const loginDetails = httpContext.get("loginDetails");
         const filter = {
-            _id : cleanerAttendanceId
+            cleaner_id : loginDetails.login_id
         }
-        const update = {
-            check_out : new Date(req.check_out),
-            modified_by: loginDetails.login_id,
-            modified_date : new Date()
-        }
-        const options = {
-            new : true
-        }
-        const updateQuery = await dbSchema.CleanerAttendance.findByIdAndUpdate(filter,update,options);
-        return updateQuery;
+        const fetchQuery = await dbSchema.AdminCleanerWorkingLocation.find(filter).lean();
+        return fetchQuery;
     }catch(e){
-        return response(500,"Error In Modal",e.message);
+        return response(500, "Error In Modal", e.message);
     }
 }
 
-module.exports.fetchParticularDateCleanerAttendace = async (req,resp) => {
-    try{
-        const startOfDay = new Date(req.particular_date);
-        startOfDay.setHours(0,0,0,0);
-        const endOfDay = new Date(req.particular_date);
-        endOfDay.setHours(23,59,59,999);
+module.exports.updateTodayCleanerAttendance = async (cleanerAttendanceId, req, resp) => {
+    try {
         const loginDetails = httpContext.get("loginDetails");
         const filter = {
-            cleaner_id : loginDetails.login_id,
-            check_in : {$gte: startOfDay, $lte: endOfDay},
-            status : dbStatus.active,
-            is_active : true
+            _id: cleanerAttendanceId
+        }
+        const update = {
+            check_out: new Date(req.check_out),
+            modified_by: loginDetails.login_id,
+            modified_date: new Date()
+        }
+        const options = {
+            new: true
+        }
+        const updateQuery = await dbSchema.CleanerAttendance.findByIdAndUpdate(filter, update, options);
+        return updateQuery;
+    } catch (e) {
+        return response(500, "Error In Modal", e.message);
+    }
+}
+
+module.exports.fetchParticularDateCleanerAttendace = async (req, resp) => {
+    try {
+        const startOfDay = new Date(req.particular_date);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(req.particular_date);
+        endOfDay.setHours(23, 59, 59, 999);
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            cleaner_id: loginDetails.login_id,
+            check_in: { $gte: startOfDay, $lte: endOfDay },
+            status: dbStatus.active,
+            is_active: true
         }
         const fetchQuery = await dbSchema.CleanerAttendance.find(filter).lean();
         return fetchQuery;
-    }catch(e){
-        return response(500,"Error In Modal",e.message);
+    } catch (e) {
+        return response(500, "Error In Modal", e.message);
     }
 }
 
-module.exports.fetchTotalDaysInThisMonth = async (startDateOfMonth,lastDateOfMonth,resp) => {
-    try{
+module.exports.fetchTotalDaysInThisMonth = async (startDateOfMonth, lastDateOfMonth, resp) => {
+    try {
         const loginDetails = httpContext.get("loginDetails");
         const current_date = new Date();
         const filter = {
-            cleaner_id : loginDetails.login_id,
-            check_in : {$gte: startDateOfMonth, $lte: lastDateOfMonth},
-            status : dbStatus.active,
-            is_active : true
+            cleaner_id: loginDetails.login_id,
+            check_in: { $gte: startDateOfMonth, $lte: lastDateOfMonth },
+            status: dbStatus.active,
+            is_active: true
         }
         const fetchQuery = await dbSchema.CleanerAttendance.countDocuments(filter).lean();
         return fetchQuery;
-    }catch(e){
-        return response(500,"Error In Modal",e.message);
+    } catch (e) {
+        return response(500, "Error In Modal", e.message);
     }
 }
 
@@ -1493,6 +1590,7 @@ module.exports.insertNewServiceDiscount = async (req, resp) => {
             discount_type: req.discount_type,
             discount_value: req.discount_value,
             discount_no: req.discount_no,
+            discount_name: req.discount_name,
             added_by: loginDetails.login_id,
             modified_by: loginDetails.login_id,
         })
@@ -1510,6 +1608,7 @@ module.exports.insertAdminGeneralSetting = async (req, resp) => {
             admin_id: loginDetails.login_id,
             cleaner_subscribed_limits: req.cleaner_subscribed_limits,
             platform_fees: req.platform_fees,
+            platform_fees_type: req.platform_fees_type,
             added_by: loginDetails.login_id,
             modified_by: loginDetails.login_id,
         })
@@ -1559,9 +1658,10 @@ module.exports.deleteParticularTermAndCondition = async (req, resp) => {
 
 module.exports.editParticularTermAndCondition = async (req, resp) => {
     try {
+        console.log("term_and_condition_id")
         const loginDetails = httpContext.get("loginDetails");
         const filter = {
-            _id: req.term_and_conditon_id
+            _id: req.term_and_condition_id
         }
         const update = {
             term_title: req.term_title,
@@ -1639,11 +1739,37 @@ module.exports.editParticularPrivacyPolicy = async (req, resp) => {
     }
 }
 
+module.exports.fetchCleanerAllAllotedLocation = async (req,resp) => {
+    try{
+        const filter = {
+            status : dbStatus.active,
+            is_active: true
+        }
+        const fetchQuery = await dbSchema.AdminCleanerWorkingLocation.find(filter).populate("cleaner_id","first_name last_name mobile_no").populate("service_shift_time_id","shift from_time to_time am_or_pm key").select("-__v").lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.fetchAllBookingList = async (req,resp) => {
+    try{
+        const filter = {
+            // status : dbStatus.active,
+            is_active: true
+        }
+        const fetchQuery = await dbSchema.UserBooking.find(filter).populate("user_id","first_name last_name").populate("cleaner_id","first_name last_name").populate("user_location_id","full_address pin_code").populate("user_car_details_id","vehicle_id car_name").lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
 module.exports.fetchServiceBasedDiscountInfo = async (req, resp) => {
     try {
         const filter = {
             service_id: req.service_id,
-            start_date : {$lte : new Date(req.start_date)},
+            start_date: { $lte: new Date(req.start_date) },
             expiry_date: { $gte: new Date(req.start_date) },
             status: dbStatus.active,
             is_active: true
@@ -1690,6 +1816,88 @@ module.exports.fetchAllPrivacyPolicy = async (req, resp) => {
             is_active: true
         }
         const fetchQuery = await dbSchema.AdminPrivacyPolicy.find(filter).lean();
+        return fetchQuery;
+    } catch (e) {
+        return response(500, "Error In Modal", e.message);
+    }
+}
+
+module.exports.particularDateUserBooking = async (req, resp) => {
+    try {
+        // let service_date = new Date();
+        // service_date.setHours(0,0,0,0);
+        // console.log("req.serivice_date",service_date.toISOString());
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            user_id : loginDetails.login_id,
+            service_date: new Date(req.service_date),
+            is_active: true
+        }
+        const fetchQuery = await dbSchema.UserBooking.find(filter).populate("package_id","service_id").populate("user_car_details_id","vehicle_id owner_name car_name car_type steering color fuel_type").populate("cleaner_id","first_name last_name").select("-added_by -modified_by -added_date -modified_date -is_active -__v").lean();
+        return fetchQuery;
+    } catch (e) {
+        return response(500, "Error In Modal", e.message);
+    }
+}
+
+module.exports.fetchUserBookingHistory = async (req,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            user_id : loginDetails.login_id,
+            status : req.status,
+            is_active: true
+        }
+        const fetchQuery = await dbSchema.UserBooking.find(filter).populate("cleaner_id", "first_name last_name").lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.userCancelBooking = async (req,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            _id : req.user_booking_id
+        }
+        const update = {
+            status : dbStatus.cancelled,
+            modified_by : loginDetails.login_id,
+            modified_date : new Date()
+        }
+        const options = {
+            new: true
+        }
+        const updateQuery = await dbSchema.UserBooking.findByIdAndUpdate(filter,update,options);
+        return updateQuery
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.userBoughtPackage = async (req,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            user_id : loginDetails.login_id,
+            status: dbStatus.active,
+            is_active: true
+        }
+        const fetchQuery = await dbSchema.UserBuyPackage.find(filter).populate("car_type_id","car_type").populate("service_shift_time_id","shift").lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+
+module.exports.fetchGeneralSetting = async (req, resp) => {
+    try {
+        const filter = {
+            is_active: true
+        }
+        const fetchQuery = await dbSchema.AdminGeneralSetting.findOne(filter).select("cleaner_subscribed_limits platform_fees platform_fees_type").lean();
         return fetchQuery;
     } catch (e) {
         return response(500, "Error In Modal", e.message);
@@ -1814,54 +2022,294 @@ module.exports.testingFetchGeoLocationNearBy = async (req, resp) => {
 }
 
 
-
-
-
-module.exports.fetchAllUserForCRM = async (req,resp) => {
-    try{
+module.exports.fetchAllUserForCRM = async (req, resp) => {
+    try {
         const filter = {
-            is_active : true
+            is_active: true
         }
         const fetchQuery = await dbSchema.UserRegisteration.find(filter).lean();
         return fetchQuery;
-    }catch(e){
-        return response(500,"Error In Modal",e.message);
+    } catch (e) {
+        return response(500, "Error In Modal", e.message);
     }
 }
 
-module.exports.fetchAllCleanerForCRM = async (req,resp) => {
-    try{
+module.exports.fetchAllCleanerForCRM = async (req, resp) => {
+    try {
         const filter = {
-            is_active : true
+            is_active: true
         };
         const fetchQuery = await dbSchema.CleanerProfile.find(filter).lean();
         return fetchQuery;
-    }catch(e){
-        return response(500,"Error In Modal",e.message);
+    } catch (e) {
+        return response(500, "Error In Modal", e.message);
     }
 }
 
 
-module.exports.fetchUserDetailsForCRM = async (req,resp) => {
-    try{
+module.exports.fetchUserDetailsForCRM = async (req, resp) => {
+    try {
         const filter = {
-            _id : req.user_id,
+            _id: req.user_id,
         }
-        const fetchQuery = await dbSchema.UserRegisteration.findById(filter).lean();
+        const fetchQuery = await dbSchema.UserRegisteration.findById(filter).populate("location_id","full_address address_nickname country_name state_name status is_active").select("profile_pic first_name last_name email mobile_no status is_active").lean();
         return fetchQuery;
-    }catch(e){
-        return response(500,"Error In Modal",e.message);
+    } catch (e) {
+        return response(500, "Error In Modal", e.message);
     }
 }
 
-module.exports.fetchCleanerDetailsForCRM = async (req,resp) => {
-    try{
+module.exports.fetchCleanerDetailsForCRM = async (req, resp) => {
+    try {
         const filter = {
-            _id : req.cleaner_id
+            _id: req.cleaner_id
         }
         const fetchQuery = await dbSchema.CleanerProfile.findById(filter).lean();
         return fetchQuery;
+    } catch (e) {
+        return response(500, "Error In Modal", e.message);
+    }
+}
+
+module.exports.fetchParticularUserActivePackageCRM = async (req,resp) => {
+    try{
+        const filter = {
+            user_id : req.user_id
+        }
+        const fetchQuery = await dbSchema.UserBuyPackage.findOne(filter).populate("service_id","service_name").populate("car_type_id","car_type").populate("user_car_details_id","vehicle_id").populate("package_id","package_period package_period_duration").populate("service_shift_time_id","shift from_time to_time am_or_pm").select("-added_by -modified_by -modified_date -cleaner_id -user_location_id -price -__v").lean();
+        return fetchQuery;
     }catch(e){
         return response(500,"Error In Modal",e.message);
     }
 }
+
+module.exports.fetchParticularUserLatestBooking = async (req,resp) => {
+    try{
+        const filter = {
+            user_id : req.user_id
+        }
+        const fetchQuery = await dbSchema.CleanerWorkingHistory.find(filter).populate({path:"booking_id",select:"",populate:{path:"user_buy_package_id"}}).lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.alreadyTodayParticularVehicleCleanerExist = async (req,resp) => {
+    try{
+        const filter = {
+            // start_time further added
+            user_car_details_id : req.user_car_details_id
+        }
+        const fetchQuery = await dbSchema.CleanerWorkingHistory.findOne(filter).lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.insertCleanerWorkStart = async (req,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const insertedObject = new dbSchema.CleanerWorkingHistory({
+            cleaner_id : loginDetails.login_id,
+            user_id : req.user_id,
+            booking_id : req.booking_id,
+            user_car_details_id : req.user_car_details_id,
+            user_location_id : req.user_location_id,
+            start_time : new Date(req.start_time),
+            added_by : loginDetails.login_id,
+            modified_by : loginDetails.login_id
+        })
+        const insertQuery = await insertedObject.save();
+        return insertQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.updateBookingStatus = async (req,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            _id : req.booking_id
+        }
+        const update = {
+            status : dbStatus.started,
+            modified_by : loginDetails.login_id,
+            modified_date : new Date()
+        }
+        const options = {
+            new: true
+        }
+        const updateQuery = await dbSchema.UserBooking.findByIdAndUpdate(filter,update,options);
+        return updateQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.updateStartingWorkImage = async (cleanerWorkHistoryId,startingImageFileArr,resp) => {
+    try{
+        const filter = {
+            _id : cleanerWorkHistoryId
+        }
+        const update = {
+            $push: {starting_image : {$each : startingImageFileArr,$position:0}}
+        }
+        const options = {
+            new: true
+        }
+        const updateQuery = await dbSchema.CleanerWorkingHistory.findByIdAndUpdate(filter,update,options);
+        return updateQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.updateEndingWorkImage = async (cleanerWorkHistoryId,endingImageFileArr,resp) => {
+    try{
+        const filter = {
+            _id : cleanerWorkHistoryId
+        }
+        const update = {
+            $push: {ending_image : {$each : endingImageFileArr,$position:0}}
+        }
+        const options = {
+            new: true
+        }
+        const updateQuery = await dbSchema.CleanerWorkingHistory.findByIdAndUpdate(filter,update,options);
+        return updateQuery; 
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.updateCleanerCompleteWork = async (req,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            _id : req.cleaner_history_id
+        }
+        const update = {
+            end_time : new Date(req.end_time),
+            modified_by : loginDetails.login_id,
+            modified_date : new Date()
+        }
+        const options = {
+            new : true
+        }
+        const updateQuery = await dbSchema.CleanerWorkingHistory.findByIdAndUpdate(filter,update,options);
+        return updateQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.updateBookingCompleted = async (req,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            _id : req.booking_id
+        }
+        const update = {
+            status : dbStatus.completed,
+            modified_by : loginDetails.login_id,
+            modified_date : new Date()
+        }
+        const options = {
+            new: true
+        }
+        const updateQuery = await dbSchema.UserBooking.findByIdAndUpdate(filter,update,options);
+        return updateQuery;
+    }catch(e){
+        return resp.status(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.fetchCleanerAllJobs = async (req,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            cleaner_id : loginDetails.login_id
+        }
+        const fetchQuery = await dbSchema.AdminCleanerWorkingLocation.findOne(filter).lean();
+        return fetchQuery;
+    }catch(e){
+        return resp.status(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.updateTotalCompletedJobsCleaner = async (completedJobs,activeJobs,adminCleanerWorkLocationId,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            _id : adminCleanerWorkLocationId
+        }
+        const update = {
+            completed_jobs : completedJobs,
+            active_jobs : activeJobs
+        }
+    }catch(e){
+        return resp.status(500,"Errror In MODAL",e.message);
+    }
+}
+
+module.exports.fetchCleanerUpcomingJobs = async (req,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            cleaner_id : loginDetails.login_id,
+            status : dbStatus.upcoming,
+            is_active: true
+        }
+        const fetchQuery = await dbSchema.UserBooking.find(filter).populate("user_car_details_id","car_image").populate({path:"package_id",select:"service_id",populate:{path:"service_id",model:"cw_admin_service_master",select:"service_name"}}).select("user_car_details_id service_date start_time end_time user_id").lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+module.exports.fetchCleanerTotalActiveJobs = async (req,resp) => {
+    try{
+        const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            cleaner_id: loginDetails.login_id,
+            status : dbStatus.active,
+            is_active: true
+        }
+        const fetchQuery = await dbSchema.AdminCleanerWorkingLocation.find(filter).lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+
+
+module.exports.fetchParticularBooking = async (req,resp) => {
+    try{
+        // const loginDetails = httpContext.get("loginDetails");
+        const filter = {
+            _id : req.user_booking_id
+        }
+        const fetchQuery = await dbSchema.UserBooking.findById(filter).populate("user_id","first_name last_name").populate("user_car_details_id","-added_by -modified_by -added_date -modified_date -is_active -__v").populate({path:"package_id",select:"service_id",populate:{path:"service_id",modal:"cw_admin_service_master",select:"service_name"}}).select("-added_by -modified_by -added_date -modified_date -is_active -__v").lean();
+        // const fetchQuery = await dbSchema.UserBooking.findById(filter).lean();
+        return fetchQuery;
+    }catch(e){
+        return response(500,"Error In Modal",e.message);
+    }
+}
+// module.exports.fetchCleanerAllActiveJobs = async (req,resp) => {
+//     try{
+//         const loginDetails = httpContext.get("loginDetails");
+//         const filter = {
+//             cleaner_id : loginDetails.login_id,
+//             status : dbStatus.active,
+//             is_active: true
+//         }
+//         const fetchQuery = await dbSchema.UserBooking.find(filter).lean();
+//         return fetchQuery;
+//     }catch(e){
+//         return response(500,"Error In Modal",e.message);
+//     }
+// }
