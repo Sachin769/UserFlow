@@ -1324,7 +1324,7 @@ module.exports.updateProfileCleanerViaId = async (req, imageFilePath, resp) => {
             // last_name: req.last_name,
             email: req.email,
             profile_pic: imageFilePath,
-            address: req.address,
+            address: req.full_address,
             // state_id: req.state_id,
             // state_name: req.state_name,
             // district_id: req.district_id,
