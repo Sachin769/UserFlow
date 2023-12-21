@@ -542,6 +542,7 @@ module.exports.insertOrUpdateCleanerDocuements = async (req,resp) => {
                 req.body[key] = req.body[key].replace(/"/g, '');
             }
         }
+        console.log("final request body",req.body);
         const loginDetails = httpContext.get("loginDetails");
         const validatedClenaerDocuments = await validateClenaerDocuments.validateAsync(req.body);
         console.log('done1');
@@ -554,8 +555,11 @@ module.exports.insertOrUpdateCleanerDocuements = async (req,resp) => {
             const inputFile1 = req.files.aadhar_doc_file;
             const destFileName1 = loginDetails.login_id + `${fileExtension}`;
             imageFilePathAadhar = path.join("cleaner_aadhar_card_doc", destFileName1);
+            console.log("dfsfddfsfdsf");
             const storeFilePath1 = path.join(constantFilePath, imageFilePathAadhar);
+            console.log("sttttororee file path");
             await inputFile1.mv(storeFilePath1);
+            console.log("input move files Path");
             console.log("byyee");
         }
         if(req.files?.pan_doc_file){
