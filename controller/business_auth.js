@@ -538,16 +538,19 @@ module.exports.insertOrUpdateCleanerDocuements = async (req,resp) => {
         console.log("insertedDFSDFSDF",req.files,"and",req.body);
         const loginDetails = httpContext.get("loginDetails");
         const validatedClenaerDocuments = await validateClenaerDocuments.validateAsync(req.body);
+        console.log('done1');
         //here updation query still pending
         let imageFilePathAadhar;
         let imageFilePathPan;
         if(req.files?.aadhar_doc_file){
+            console.log("hiii");
             const fileExtension = path.extname(req.files.aadhar_doc_file.name);
             const inputFile1 = req.files.aadhar_doc_file;
             const destFileName1 = loginDetails.login_id + `${fileExtension}`;
             imageFilePathAadhar = path.join("cleaner_aadhar_card_doc", destFileName1);
             const storeFilePath1 = path.join(constantFilePath, imageFilePathAadhar);
             await inputFile1.mv(storeFilePath1);
+            console.log("byyee");
         }
         if(req.files?.pan_doc_file){
             const fileExtension = path.extname(req.files.pan_doc_file.name);
@@ -557,6 +560,7 @@ module.exports.insertOrUpdateCleanerDocuements = async (req,resp) => {
             const storeFilePath1 = path.join(constantFilePath, imageFilePathPan);
             await inputFile1.mv(storeFilePath1);
         }
+        console.log("starting");
         const insertClenaerDocument = await businessModel.insertCleanerDocuments(req.body,imageFilePathAadhar,imageFilePathPan);
         if(insertClenaerDocument.code === 500){
             return resp.status(500).json(insertClenaerDocument);
