@@ -536,6 +536,12 @@ module.exports.updateProfileCleaner = async (req, resp) => {
 module.exports.insertOrUpdateCleanerDocuements = async (req,resp) => {
     try{
         console.log("insertedDFSDFSDF",req.files,"and",req.body);
+        for (const key in req.body) {
+            if (req.body.hasOwnProperty(key)) {
+                // Remove double quotes from the value and assign it to the new object
+                req.body[key] = req.body[key].replace(/"/g, '');
+            }
+        }
         const loginDetails = httpContext.get("loginDetails");
         const validatedClenaerDocuments = await validateClenaerDocuments.validateAsync(req.body);
         console.log('done1');
@@ -568,8 +574,8 @@ module.exports.insertOrUpdateCleanerDocuements = async (req,resp) => {
         dataSet = response(200,"Inserted Clenaer Documents Successfully");
         resp.status(200).json(dataSet);
     }catch(e){
-        dataSet = response(422,"Error During Insert Or Update Cleaner Documents",e.message);
-        resp.status(422).json(dataSet);
+        dataSet = response(201,"Error During Insert Or Update Cleaner Documents",e.message);
+        resp.status(201).json(dataSet);
     }
 }
 
