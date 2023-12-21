@@ -535,6 +535,7 @@ module.exports.updateProfileCleaner = async (req, resp) => {
 
 module.exports.insertOrUpdateCleanerDocuements = async (req,resp) => {
     try{
+        console.log("insertedDFSDFSDF",req.files,"and",req.body);
         const loginDetails = httpContext.get("loginDetails");
         const validatedClenaerDocuments = await validateClenaerDocuments.validateAsync(req.body);
         //here updation query still pending
